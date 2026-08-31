@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kala Billa — Music, run by a black cat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0712;
+    --bg-soft: #0e0a19;
+    --surface: #161022;
+    --surface-raised: #1d1530;
+    --line: #2a2140;
+    --violet: #9d5cff;
+    --violet-soft: #c9a6ff;
+    --cyan: #35e6c9;
+    --text: #f3eefc;
+    --muted: #948aa9;
+    --muted-dim: #6b628260;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    overflow-x:hidden;
+    line-height:1.6;
+  }
+
+  h1,h2,h3, .display{
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    line-height:1.05;
+  }
+
+  a{ color:inherit; text-decoration:none; }
+
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 32px;
+  }
+
+  ::selection{ background:var(--violet); color:#fff; }
+
+  img.emoji{
+    height:1em; width:1em;
+    margin:0 0.05em 0 0.1em;
+    vertical-align:-0.15em;
+  }
+
+  /* subtle grain */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events:none;
+    z-index:200;
+    mix-blend-mode:overlay;
+  }
+
+  /* ---------- NAV ---------- */
+  nav{
+    position:fixed; top:0; left:0; right:0;
+    z-index:100;
+    backdrop-filter:blur(14px);
+    background:rgba(10,7,18,0.55);
+    border-bottom:1px solid transparent;
+    transition:border-color .3s ease, background .3s ease;
+  }
+  nav.scrolled{ border-bottom-color:var(--line); background:rgba(10,7,18,0.85); }
+
+  .nav-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:18px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .brand{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-weight:800;
+    font-size:1.15rem;
+  }
+  .brand-mark{
+    width:34px; height:34px;
+    border-radius:10px;
+    background:linear-gradient(135deg, var(--violet), #5a2fc2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.05rem;
+    box-shadow:0 0 24px -4px rgba(157,92,255,0.7);
+    flex-shrink:0;
+  }
+
+  .nav-links{
+    display:flex; gap:36px;
+    font-size:0.92rem;
+    color:var(--muted);
+  }
+  .nav-links a{ transition:color .2s ease; position:relative; }
+  .nav-links a:hover{ color:var(--text); }
+
+  .nav-cta{
+    display:flex; gap:12px;
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 22px;
+    border-radius:12px;
+    font-size:0.92rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+    border:1px solid transparent;
+    white-space:nowrap;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg, var(--violet), #7a3cf0);
+    color:#fff;
+    box-shadow:0 4px 24px -6px rgba(157,92,255,0.65);
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 8px 30px -6px rgba(157,92,255,0.85); }
+
+  .btn-ghost{
+    background:rgba(255,255,255,0.03);
+    border-color:var(--line);
+    color:var(--text);
+  }
+  .btn-ghost:hover{ background:rgba(255,255,255,0.07); border-color:var(--violet-soft); transform:translateY(-2px); }
+
+  .btn-sm{ padding:8px 16px; font-size:0.82rem; }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    padding-top:90px;
+    overflow:hidden;
+  }
+
+  #hero-canvas{
+    position:absolute;
+    top:0; right:0;
+    width:58%; height:100%;
+    z-index:1;
+    opacity:0;
+    transition:opacity 1.4s ease;
+  }
+  #hero-canvas.ready{ opacity:1; }
+
+  .hero-glow{
+    position:absolute;
+    width:900px; height:900px;
+    right:-320px; top:50%;
+    transform:translateY(-50%);
+    background:radial-gradient(circle, rgba(157,92,255,0.16), transparent 65%);
+    filter:blur(10px);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .hero-inner{
+    position:relative;
+    z-index:2;
+    max-width:1180px;
+    margin:0 auto;
+    width:100%;
+    padding:0 32px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:40px;
+    align-items:center;
+  }
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    color:var(--cyan);
+    font-size:0.85rem;
+    font-weight:600;
+    margin-bottom:22px;
+  }
+  .eyebrow-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 10px 2px rgba(53,230,201,0.8);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+  .hero h1{
+    font-size:clamp(2.6rem, 5vw, 4.1rem);
+    margin-bottom:22px;
+  }
+  .hero h1 .accent{
+    background:linear-gradient(120deg, var(--violet-soft), var(--cyan));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  .hero p{
+    color:var(--muted);
+    font-size:1.08rem;
+    max-width:460px;
+    margin-bottom:34px;
+  }
+
+  .hero-actions{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:44px; }
+
+  .hero-stats{
+    display:flex;
+    gap:38px;
+    padding-top:30px;
+    border-top:1px solid var(--line);
+    max-width:480px;
+  }
+  .stat-num{
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-weight:800;
+    font-size:1.7rem;
+    color:var(--text);
+  }
+  .stat-label{ font-size:0.8rem; color:var(--muted); margin-top:2px; }
+
+  .scroll-cue{
+    position:absolute;
+    bottom:32px; left:50%;
+    transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center;
+    gap:8px;
+    color:var(--muted-dim);
+    font-size:0.72rem;
+    letter-spacing:0.06em;
+    z-index:2;
+    animation:floaty 2.4s ease-in-out infinite;
+  }
+  @keyframes floaty{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,8px);} }
+  .scroll-line{ width:1px; height:34px; background:linear-gradient(var(--violet-soft), transparent); }
+
+  /* ---------- SECTION HEADERS ---------- */
+  .section{ padding:120px 0; position:relative; }
+  .section-head{ max-width:600px; margin-bottom:64px; }
+  .section-tag{ color:var(--cyan); font-size:0.85rem; font-weight:600; margin-bottom:14px; display:block; }
+  .section-head h2{ font-size:clamp(1.9rem, 3.4vw, 2.7rem); margin-bottom:16px; }
+  .section-head p{ color:var(--muted); font-size:1.02rem; max-width:520px; }
+
+  /* ---------- BENTO FEATURES ---------- */
+  .bento{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    grid-auto-rows:1fr;
+    gap:18px;
+  }
+  .card{
+    background:linear-gradient(160deg, var(--surface), var(--bg-soft));
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:28px;
+    position:relative;
+    overflow:hidden;
+    transition:border-color .25s ease, transform .25s ease;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    min-height:210px;
+  }
+  .card:hover{ border-color:var(--violet-soft); transform:translateY(-4px); }
+  .card::after{
+    content:"";
+    position:absolute;
+    top:-40%; right:-30%;
+    width:220px; height:220px;
+    background:radial-gradient(circle, rgba(157,92,255,0.14), transparent 70%);
+    pointer-events:none;
+  }
+  .card-icon{
+    width:44px; height:44px;
+    border-radius:12px;
+    background:var(--surface-raised);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:20px;
+    flex-shrink:0;
+  }
+  .card-icon svg{ width:20px; height:20px; stroke:var(--text); }
+  .card h3{ font-size:1.15rem; margin-bottom:8px; font-weight:700; margin-top:auto; }
+  .card p{ color:var(--muted); font-size:0.9rem; }
+
+  .card-feature .card-icon{ background:linear-gradient(135deg, var(--violet), #6b2fd6); border:none; box-shadow:0 6px 22px -6px rgba(157,92,255,0.6); }
+  .card-feature .card-icon svg{ stroke:#fff; }
+
+  /* ---------- COMMANDS / EMBED MOCKUP ---------- */
+  .commands-layout{
+    display:grid;
+    grid-template-columns:260px 1fr;
+    gap:40px;
+    align-items:start;
+  }
+
+  .cat-list{ display:flex; flex-direction:column; gap:6px; position:sticky; top:110px; }
+  .cat-btn{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 16px;
+    border-radius:12px;
+    font-size:0.92rem;
+    color:var(--muted);
+    cursor:pointer;
+    border:1px solid transparent;
+    background:none;
+    text-align:left;
+    width:100%;
+    font-family:inherit;
+    transition:background .2s ease, color .2s ease, border-color .2s ease;
+  }
+  .cat-btn:hover{ background:var(--surface); color:var(--text); }
+  .cat-btn.active{
+    background:var(--surface-raised);
+    border-color:var(--line);
+    color:var(--text);
+  }
+  .cat-dot{ width:8px; height:8px; border-radius:50%; background:var(--violet); flex-shrink:0; }
+
+  .embed-mock{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:4px solid var(--violet);
+    border-radius:14px;
+    padding:32px;
+    min-height:420px;
+  }
+  .embed-title{
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-weight:800;
+    font-size:1.4rem;
+    margin-bottom:20px;
+  }
+  .embed-divider{ height:1px; background:var(--line); margin-bottom:24px; }
+  .cmd-row{ margin-bottom:18px; }
+  .cmd-row:last-child{ margin-bottom:0; }
+  .cmd-name{
+    font-weight:700;
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-size:1rem;
+    margin-bottom:4px;
+  }
+  .cmd-desc{ display:flex; gap:8px; color:var(--muted); font-size:0.9rem; }
+  .cmd-arrow{ color:var(--cyan); flex-shrink:0; }
+  .cmd-prefix{
+    color:var(--muted-dim);
+    font-family:'Bricolage Grotesque', sans-serif;
+    font-size:0.72rem;
+    margin-left:6px;
+  }
+
+  /* ---------- CTA BAND ---------- */
+  .cta-band{
+    background:linear-gradient(135deg, #1d1330, #120a24);
+    border:1px solid var(--line);
+    border-radius:28px;
+    padding:80px 60px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+  }
+  .cta-band::before{
+    content:"";
+    position:absolute;
+    width:500px; height:500px;
+    background:radial-gradient(circle, rgba(53,230,201,0.13), transparent 70%);
+    top:-200px; left:50%;
+    transform:translateX(-50%);
+    pointer-events:none;
+  }
+  .cta-band h2{ font-size:clamp(1.8rem,3.4vw,2.5rem); margin-bottom:16px; position:relative; }
+  .cta-band p{ color:var(--muted); margin-bottom:34px; position:relative; }
+  .cta-actions{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; position:relative; }
+
+  /* ---------- FOOTER ---------- */
+  footer{ border-top:1px solid var(--line); padding:50px 0 36px; }
+  .footer-inner{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px;
+  }
+  .footer-brand{ display:flex; align-items:center; gap:10px; color:var(--muted); font-size:0.88rem; }
+  .footer-links{ display:flex; gap:26px; font-size:0.85rem; color:var(--muted); }
+  .footer-links a:hover{ color:var(--text); }
+  .footer-prefix{
+    font-family:'Bricolage Grotesque', sans-serif;
+    background:var(--surface-raised);
+    border:1px solid var(--line);
+    padding:3px 9px;
+    border-radius:6px;
+    color:var(--cyan);
+    font-size:0.78rem;
+  }
+
+  @media (max-width: 880px){
+    .hero-inner{ grid-template-columns:1fr; text-align:left; }
+    #hero-canvas{ width:100%; height:50%; opacity:0.3 !important; top:auto; bottom:0; }
+    .hero{ min-height:auto; padding:130px 0 60px; }
+    .hero p{ max-width:100%; }
+    .nav-links{ display:none; }
+    .bento{ grid-template-columns:1fr; }
+    .commands-layout{ grid-template-columns:1fr; }
+    .cat-list{ position:static; flex-direction:row; overflow-x:auto; padding-bottom:6px; }
+    .cta-band{ padding:56px 28px; }
+    .footer-inner{ flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="brand-mark">🐈‍⬛</div>
+      Kala Billa
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#commands">Commands</a>
+      <a href="#invite">Get Started</a>
+    </div>
+    <div class="nav-cta">
+      <a href="https://discord.gg/96y4hmtuAJ" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">Support</a>
+      <a href="https://discord.com/oauth2/authorize?client_id=1543647790456905758&scope=bot+applications.commands&permissions=8" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Invite</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-inner">
+    <div>
+      <h1>Music that hits<br> different, run by<br> a <span class="accent">black cat.</span></h1>
+      <p>Kala Billa drops flawless audio into your voice channel, remembers every playlist, and never asks you to pay for it. Type <strong style="color:var(--text)">?help</strong> and let the cat take it from there.</p>
+      <div class="hero-actions">
+        <a href="https://discord.com/oauth2/authorize?client_id=1543647790456905758&scope=bot+applications.commands&permissions=8" class="btn btn-primary" target="_blank" rel="noopener">Add to Discord</a>
+        <a href="#commands" class="btn btn-ghost">Browse commands</a>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="stat-num">60+</div>
+          <div class="stat-label">Commands</div>
+        </div>
+        <div>
+          <div class="stat-num">7</div>
+          <div class="stat-label">Categories</div>
+        </div>
+        <div>
+          <div class="stat-num">24/7</div>
+          <div class="stat-label">Uptime</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="section-tag">What it does</span>
+      <h2>Everything a music bot should be, minus the annoying parts.</h2>
+      <p>Built for servers that actually use their music bot — fast queueing, saved playlists, real audio filters, and a help menu that doesn't make you guess.</p>
+    </div>
+
+    <div class="bento">
+      <div class="card card-feature">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        </div>
+        <h3>Studio-grade playback</h3>
+        <p>Play, pause, skip, seek and jump between tracks with near-zero lag, streamed straight into your voice channel.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </div>
+        <h3>Smart queue</h3>
+        <p>Shuffle, reorder, or clear the queue mid-song without breaking playback.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Saved playlists</h3>
+        <p>Save the current queue, reload it later, or import from a share code.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </div>
+        <h3>Audio filters</h3>
+        <p>Nightcore, bassboost, 8D and more, applied live.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon" style="background:linear-gradient(135deg, #ffb648, #ff8a3d); border:none;">
+          <svg viewBox="0 0 24 24" fill="#fff" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h3>Favourites</h3>
+        <p>Star a track once, replay it forever.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </div>
+        <h3>Custom prefix</h3>
+        <p>Every server picks its own prefix with <span style="color:var(--cyan)">?setprefix</span> — no fighting other bots for the same one.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="commands">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="section-tag">Command reference</span>
+      <h2>Every command, organised the way you'd look for it.</h2>
+      <p>This is the exact layout you'll see when you type <strong style="color:var(--text)">?help</strong> in your server.</p>
+    </div>
+
+    <div class="commands-layout">
+      <div class="cat-list" id="cat-list"></div>
+      <div class="embed-mock" id="embed-mock"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="invite">
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>Your voice channel is missing a soundtrack.</h2>
+      <p>Two clicks, zero setup, and Kala Billa is already queuing your first song.</p>
+      <div class="cta-actions">
+        <a href="https://discord.com/oauth2/authorize?client_id=1543647790456905758&scope=bot+applications.commands&permissions=8" class="btn btn-primary" target="_blank" rel="noopener">Add to Discord</a>
+        <a href="https://discord.gg/96y4hmtuAJ" class="btn btn-ghost" target="_blank" rel="noopener">Join the support server</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <div class="brand-mark" style="width:26px;height:26px;font-size:0.85rem;">🐈‍⬛</div>
+      Kala Billa · Developed by Mohsin.Exe
+    </div>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#commands">Commands</a>
+      <a href="https://discord.gg/96y4hmtuAJ" target="_blank" rel="noopener">Support</a>
+      <span>Default prefix <span class="footer-prefix">?help</span></span>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js"></script>
+<script>
+  // ---------- NAV SCROLL STATE ----------
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // ---------- COMMAND DATA (mirrors the bot's real help menu) ----------
+  const categories = {
+    playback: {
+      name: 'Music Playback',
+      icon: '🎵',
+      commands: [
+        { name: 'play', desc: 'Play a song or add it to the queue' },
+        { name: 'pause', desc: 'Pause the currently playing song' },
+        { name: 'resume', desc: 'Resume the paused song' },
+        { name: 'skip', desc: 'Skip the current song' },
+        { name: 'nowplaying', desc: 'Show the currently playing song' },
+      ]
+    },
+    queue: {
+      name: 'Queue Management',
+      icon: '📃',
+      commands: [
+        { name: 'queue', desc: 'Show the current song queue' },
+        { name: 'shuffle', desc: 'Shuffle the queue order' },
+        { name: 'remove', desc: 'Remove a song from queue' },
+        { name: 'move', desc: 'Move a track to a different position' },
+      ]
+    },
+    favorites: {
+      name: 'Favourites',
+      icon: '⭐',
+      commands: [
+        { name: 'fav add', desc: 'Add a song to your favorites' },
+        { name: 'fav list', desc: 'Show your favorite songs' },
+        { name: 'fav play', desc: 'Play all songs from your favorites' },
+      ]
+    },
+    playlists: {
+      name: 'Playlists',
+      icon: '💾',
+      commands: [
+        { name: 'pl create', desc: 'Create a new empty playlist' },
+        { name: 'pl save', desc: 'Save the current queue as a playlist' },
+        { name: 'pl load', desc: 'Clear the queue and load a playlist' },
+        { name: 'pl share', desc: 'Share a playlist with others' },
+      ]
+    },
+    settings: {
+      name: 'Settings & Filters',
+      icon: '🎚️',
+      commands: [
+        { name: 'filter', desc: 'Apply audio filter (equalizer)' },
+        { name: 'loop', desc: 'Set repeat mode' },
+        { name: 'volume', desc: 'Set music volume' },
+        { name: 'setprefix', desc: 'Change the bot\'s command prefix for this server' },
+      ]
+    },
+    info: {
+      name: 'Information',
+      icon: 'ℹ️',
+      commands: [
+        { name: 'help', desc: 'Show this help menu' },
+        { name: 'ping', desc: 'Check the bot\'s latency' },
+        { name: 'invite', desc: 'Get the link to invite the bot to your server' },
+        { name: 'support', desc: 'Get the link to the bot\'s support server' },
+      ]
+    }
+  };
+
+  const catList = document.getElementById('cat-list');
+  const embedMock = document.getElementById('embed-mock');
+
+  function renderCategory(key){
+    const cat = categories[key];
+    embedMock.innerHTML = `
+      <div class="embed-title">${cat.icon} ${cat.name}</div>
+      <div class="embed-divider"></div>
+      ${cat.commands.map(c => `
+        <div class="cmd-row">
+          <div class="cmd-name">${c.name}</div>
+          <div class="cmd-desc"><span class="cmd-arrow">»</span> ${c.desc}</div>
+        </div>
+      `).join('')}
+      <div class="cmd-row" style="margin-top:26px; padding-top:22px; border-top:1px solid var(--line);">
+        <span class="cmd-prefix">TRY IT — ?${cat.commands[0].name.split(' ')[0]}</span>
+      </div>
+    `;
+
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.key === key);
+    });
+
+    if (window.twemoji) twemoji.parse(embedMock, { folder: 'svg', ext: '.svg' });
+  }
+
+  Object.keys(categories).forEach((key, i) => {
+    const cat = categories[key];
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn' + (i === 0 ? ' active' : '');
+    btn.dataset.key = key;
+    btn.innerHTML = `<span class="cat-dot"></span> ${cat.name}`;
+    btn.addEventListener('click', () => renderCategory(key));
+    catList.appendChild(btn);
+  });
+
+  renderCategory('playback');
+
+  if (window.twemoji) twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
+
+  // ---------- 3D HERO ANIMATION ----------
+  (function initHero3D(){
+    const canvas = document.getElementById('hero-canvas');
+    if (!window.THREE) return;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    camera.position.z = 7;
+
+    function resize(){
+      const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+      const h = canvas.clientHeight || window.innerHeight;
+      renderer.setSize(w, h, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    // vinyl disc core
+    const discGeo = new THREE.TorusGeometry(2.1, 0.06, 16, 100);
+    const discMat = new THREE.MeshBasicMaterial({ color: 0x9d5cff, transparent: true, opacity: 0.9 });
+    const disc = new THREE.Mesh(discGeo, discMat);
+    group.add(disc);
+
+    const discGeo2 = new THREE.TorusGeometry(1.5, 0.03, 16, 100);
+    const discMat2 = new THREE.MeshBasicMaterial({ color: 0x35e6c9, transparent: true, opacity: 0.55 });
+    const disc2 = new THREE.Mesh(discGeo2, discMat2);
+    group.add(disc2);
+
+    const coreGeo = new THREE.IcosahedronGeometry(0.55, 1);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xf3eefc, wireframe: true, transparent: true, opacity: 0.6 });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    group.add(core);
+
+    // orbiting particles
+    const particleCount = 260;
+    const positions = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++){
+      const radius = 2.6 + Math.random() * 1.8;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      positions[i*3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i*3+1] = radius * Math.sin(phi) * Math.sin(theta) * 0.6;
+      positions[i*3+2] = radius * Math.cos(phi);
+    }
+    const particleGeo = new THREE.BufferGeometry();
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const particleMat = new THREE.PointsMaterial({ color: 0xc9a6ff, size: 0.035, transparent: true, opacity: 0.75 });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    group.add(particles);
+
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5);
+      mouseY = (e.clientY / window.innerHeight - 0.5);
+    });
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    let ready = false;
+    function animate(){
+      requestAnimationFrame(animate);
+      group.rotation.y += 0.0028;
+      group.rotation.x = THREE.MathUtils.lerp(group.rotation.x, mouseY * 0.4, 0.03);
+      group.rotation.z = THREE.MathUtils.lerp(group.rotation.z, mouseX * -0.15 + 0.25, 0.03);
+      particles.rotation.y -= 0.0012;
+      core.rotation.x += 0.004;
+      core.rotation.y += 0.006;
+      renderer.render(scene, camera);
+      if (!ready){ ready = true; canvas.classList.add('ready'); }
+    }
+    animate();
+  })();
+</script>
+
+</body>
+</html>
